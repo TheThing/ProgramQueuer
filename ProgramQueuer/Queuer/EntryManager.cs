@@ -88,7 +88,7 @@ namespace ProgramQueuer.Queuer
 				entry.Working = false;
 				entry.Finished = false;
 				entry.Status = string.Format("Error while starting: {0}", e.Message);
-				entry.Output += string.Format("Error while starting {0}:\n\n{1}", _currentEntry.Name, e.ToString());
+				entry.Output += string.Format("Error while starting {0}:\n\n{1}", entry.Name, e.ToString());
 				if (RunNext())
 				{
 					_currentEntry = null;
