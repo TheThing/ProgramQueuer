@@ -35,11 +35,13 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <ApplicationIcon>reports.ico</ApplicationIcon>
+    <ApplicationIcon>program.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -63,9 +65,6 @@
     <Compile Include="Queuer\EntryManager.cs" />
     <Compile Include="Queuer\ProcessIOManager.cs" />
     <Compile Include="Queuer\ProgramEntry.cs" />
-    <Compile Include="Settings.xaml.cs">
-      <DependentUpon>Settings.xaml</DependentUpon>
-    </Compile>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -78,10 +77,6 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Page Include="Settings.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs">
@@ -126,10 +121,22 @@
     <Resource Include="Resources\play.png" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="reports.ico" />
+    <Resource Include="Resources\add.png" />
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Resources\add.png" />
+    <Resource Include="Resources\Help.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\force_run.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Resources\trash-icon.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="program.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\Program.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

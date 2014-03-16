@@ -248,7 +248,7 @@ namespace ProgramQueuer.Queuer
 						StderrTextRead(textbuffer.ToString());
 					}
 				}
-				catch (Exception e)
+				catch (Exception)
 				{
 				}
 				// 'Clear' the text buffer

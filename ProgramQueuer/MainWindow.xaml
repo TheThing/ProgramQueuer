@@ -3,14 +3,16 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:converters="clr-namespace:ProgramQueuer.Helpers"
         xmlns:properties="clr-namespace:ProgramQueuer.Properties"
-        Title="MainWindow"
+        Title="Program Queuer"
         Closing="Window_Closing"
         AllowDrop="True"
         DragEnter="ListView_DragEnter" Drop="ListView_Drop"
+        Loaded="Window_Loaded"
         Width="{Binding Path=width, Source={x:Static properties:Settings.Default}, Mode=TwoWay}"
-        Height="{Binding Path=height, Source={x:Static properties:Settings.Default}, Mode=TwoWay}" Loaded="Window_Loaded" Icon="/ProgramQueuer;component/reports.ico">
+        Height="{Binding Path=height, Source={x:Static properties:Settings.Default}, Mode=TwoWay}" Icon="/ProgramQueuer;component/program.ico" StateChanged="Window_StateChanged">
     <Window.Resources>
         <converters:BoolToVisibility x:Key="boolToVisible" />
+        <converters:BooleanInverter x:Key="BooleanInverter" />
         <converters:ValueConverterGroup x:Key="boolInvertedToVisible">
             <converters:BooleanInverter />
             <converters:BoolToVisibility />
@@ -18,9 +20,9 @@
     </Window.Resources>
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="{Binding Path=split_height, Source={x:Static properties:Settings.Default}, Mode=OneWay}" />
-            <RowDefinition Height="9" />
             <RowDefinition Height="*" />
+            <RowDefinition Height="9" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <Grid>
@@ -35,7 +37,7 @@
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
                                     <StackPanel Orientation="Horizontal">
-                                        <Image Height="16" Width="16" Source="/ProgramQueuer;component/Resources/play.png" Visibility="{Binding Path=Working, Converter={StaticResource boolToVisible}}" />
+                                        <!--<Image Height="16" Width="16" Source="/ProgramQueuer;component/Resources/play.png" Visibility="{Binding Path=Working, Converter={StaticResource boolToVisible}}" />-->
                                         <Image Height="16" Width="16" Source="/ProgramQueuer;component/Resources/application.png" Visibility="{Binding Path=Finished, Converter={StaticResource boolInvertedToVisible}}" />
                                         <Image Height="16" Width="16" Source="/ProgramQueuer;component/Resources/accept.png" Visibility="{Binding Path=Finished, Converter={StaticResource boolToVisible}}" />
                                     </StackPanel>
@@ -59,6 +61,9 @@
                                         <Button Margin="0 0 6 0" BorderBrush="Transparent" Background="Transparent" Visibility="{Binding Path=Working, Converter={StaticResource boolToVisible}}" Click="buttonStopCurrent_Click">
                                             <Image Height="16" Width="16" Source="/ProgramQueuer;component/Resources/stop.png" />
                                         </Button>
+                                        <Button Margin="0 0 6 0" BorderBrush="Transparent" Background="Transparent" Visibility="{Binding Path=Working, Converter={StaticResource boolInvertedToVisible}}" Click="buttonStartCurrent_Click">
+                                            <Image Height="16" Width="16" Source="/ProgramQueuer;component/Resources/force_run.png" />
+                                        </Button>
                                         <!--<Button Margin="0 0 6 0"  BorderBrush="Transparent" Background="Transparent">
                                             <Image Height="16" Width="16" Source="/ProgramQueuer;component/Resources/window.png" />
                                         </Button>-->
@@ -76,15 +81,40 @@
                     </GridView>
                 </ListView.View>
             </ListView>
-            <StackPanel Grid.Column="1">
-                <Button Margin="0 6 6 6" BorderBrush="Transparent" Background="Transparent" Visibility="{Binding Path=Working, Converter={StaticResource boolInvertedToVisible}}" Click="buttonAdd_Click">
+            <StackPanel Grid.Column="1" Orientation="Vertical">
+                <Button Margin="0 6 6 6" BorderBrush="Transparent" Background="Transparent" Click="buttonAdd_Click" ToolTip="Add a Program to the batch">
                     <Image Height="16" Width="16" Source="/ProgramQueuer;component/Resources/add.png" />
                 </Button>
+                <Button x:Name="buttonEmpty" Margin="0 6 6 6" BorderBrush="Transparent" Background="Transparent" Click="buttonClear_Click" ToolTip="Clear list">
+                    <Image Height="16" Width="16" Source="/ProgramQueuer;component/Resources/trash-icon.png" />
+                </Button>
+                <Popup HorizontalOffset="-228" VerticalOffset="0" Width="250" Height="Auto" x:Name="popupEmpty" PlacementTarget="{Binding ElementName=buttonEmpty}" StaysOpen="False">
+                    <Border Background="White" BorderBrush="LightGray" BorderThickness="1">
+                        <StackPanel>
+                            <Button BorderBrush="Transparent" Background="Transparent" Click="buttonClearFinished_Click">Remove Finished Entries</Button>
+                            <Button BorderBrush="Transparent" Background="Transparent" Click="buttonClearAll_Click" IsEnabled="{Binding Path=Working, Converter={StaticResource BooleanInverter}}">Remove All Entries</Button>
+                        </StackPanel>
+                    </Border>
+                </Popup>
             </StackPanel>
         </Grid>
         <GridSplitter ResizeDirection="Rows" Grid.Row="1" BorderThickness="1" Background="Transparent" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" DragCompleted="GridSplitter_DragCompleted" />
-        <GroupBox Grid.Row="2" Margin="6 0 6 6" Header="Output" Padding="0 3 0 0">
-            <TextBox x:Name="textboxStatus" AcceptsReturn="True" IsReadOnly="True" Background="Black" Foreground="White" Text="{Binding Path=SelectedItem.Output, ElementName=listPrograms}" TextChanged="TextBox_TextChanged" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" FontFamily="Fixedsys Excelsior 2.00">
+        <GroupBox Grid.Row="2" Margin="6 0 6 6" Padding="0 3 0 0">
+            <GroupBox.Header>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock>Output</TextBlock>
+                    <CheckBox x:Name="checkboxOverrideOutput" Margin="6 2 0 0" IsChecked="{Binding Path=RedirectOutput, Mode=TwoWay}" IsEnabled="{Binding Path=Working, Converter={StaticResource BooleanInverter}}" Checked="checkboxOverrideOutput_Checked" Unchecked="checkboxOverrideOutput_Unchecked">Override Console Window</CheckBox>
+                    <Button x:Name="buttonHelp" Margin="6 0 0 0" BorderBrush="Transparent" Background="#01FFFFFF" Cursor="Help" Visibility="{Binding Path=Working, Converter={StaticResource boolInvertedToVisible}}" Click="ButtonHelp_Click">
+                        <Image Height="16" Width="16" Source="/ProgramQueuer;component/Resources/help.png" />
+                    </Button>
+                    <Popup HorizontalOffset="0"  VerticalOffset="0" Width="350" Height="Auto" x:Name="popupHelp" PlacementTarget="{Binding ElementName=buttonHelp}" StaysOpen="False">
+                        <Border BorderBrush="DarkGray" BorderThickness="1" Background="White">
+                            <TextBlock Margin="6" TextWrapping="Wrap">Controls whether the cmd (command line window) is displayed or not.<LineBreak /><LineBreak />If this is checked, ProgramQueuer will hide the window and transfer all output in the textbox below.<LineBreak /><LineBreak />If this is not checked, the original cmd window is displayed.</TextBlock>
+                        </Border>
+                    </Popup>
+                </StackPanel>
+            </GroupBox.Header>
+            <TextBox Height="{Binding Path=split_height, Source={x:Static properties:Settings.Default}, Mode=OneWay}" x:Name="textboxStatus" AcceptsReturn="True" IsReadOnly="True" Background="Black" Foreground="White" Text="{Binding Path=SelectedItem.Output, ElementName=listPrograms}" TextChanged="TextBox_TextChanged" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" FontFamily="Fixedsys Excelsior 2.00">
                 
             </TextBox>
         </GroupBox>
