@@ -4,6 +4,7 @@ using System.Configuration;
 using System.Data;
 using System.Linq;
 using System.Windows;
+using System.Windows.Controls;
 
 namespace ProgramQueuer
 {
@@ -12,5 +13,5 @@ namespace ProgramQueuer
 	/// </summary>
 	public partial class App : Application
 	{
-	}
+    }
 }

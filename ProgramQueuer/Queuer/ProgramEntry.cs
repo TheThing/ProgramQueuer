@@ -14,6 +14,7 @@ namespace ProgramQueuer.Queuer
 		bool _working;
 		bool _finished;
 		bool _clearNext;
+		bool _redirected;
 		string _name;
 		string _output;
 		string _status;
@@ -25,6 +26,7 @@ namespace ProgramQueuer.Queuer
 		{
 			Finished = false;
 
+			this.Parent = null;
 			_process = new Process();
 			_process.StartInfo.UseShellExecute = false;
 			_process.EnableRaisingEvents = true;
@@ -35,6 +37,13 @@ namespace ProgramQueuer.Queuer
 		}
 
 		public event PropertyChangedEventHandler PropertyChanged = delegate { };
+
+		public EntryManager Parent;
+
+		public bool Redirected
+		{
+			get => _redirected;
+		}
 
 		public string Name
 		{
@@ -118,6 +127,7 @@ namespace ProgramQueuer.Queuer
 			_process.Start();
 			if (redirect)
 			{
+				_redirected = true;
 				_processManager.RunningProcess = _process;
 				_processManager.StartProcessOutputRead();
 			}
@@ -129,6 +139,10 @@ namespace ProgramQueuer.Queuer
 			if (!text.EndsWith("\r") && !text.EndsWith("\n") && _clearNext)
 			{
 				_buffer += text;
+				if (this.Parent != null)
+				{
+					this.Parent.TriggerSave();
+				}
 				return;
 			}
 			else
@@ -163,6 +177,11 @@ namespace ProgramQueuer.Queuer
 				_clearNext = true;
 			else
 				_clearNext = false;
+
+			if (this.Parent != null)
+			{
+				this.Parent.TriggerSave();
+			}
 		}
 	}
 }

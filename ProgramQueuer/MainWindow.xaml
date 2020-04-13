@@ -9,7 +9,7 @@
         DragEnter="ListView_DragEnter" Drop="ListView_Drop"
         Loaded="Window_Loaded"
         Width="{Binding Path=width, Source={x:Static properties:Settings.Default}, Mode=TwoWay}"
-        Height="{Binding Path=height, Source={x:Static properties:Settings.Default}, Mode=TwoWay}" Icon="/ProgramQueuer;component/program.ico" StateChanged="Window_StateChanged">
+        Height="{Binding Path=height, Source={x:Static properties:Settings.Default}, Mode=TwoWay}" Icon="logo.ico" StateChanged="Window_StateChanged">
     <Window.Resources>
         <converters:BoolToVisibility x:Key="boolToVisible" />
         <converters:BooleanInverter x:Key="BooleanInverter" />
@@ -18,11 +18,14 @@
             <converters:BoolToVisibility />
         </converters:ValueConverterGroup>
     </Window.Resources>
-    <Grid>
+    <Grid x:Name="mainGrid">
+        <Grid.Background>
+            <SolidColorBrush Color="{DynamicResource BaseM2Color}" />
+        </Grid.Background>
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
             <RowDefinition Height="9" />
-            <RowDefinition Height="Auto" />
+            <RowDefinition Height="200" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <Grid>
@@ -30,20 +33,9 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <ListView x:Name="listPrograms" Margin="6 6 6 0" AllowDrop="True" ItemsSource="{Binding QueueList}" SelectionMode="Single">
+            <ListView x:Name="listPrograms" Margin="8 8 0 8" AllowDrop="True" ItemsSource="{Binding QueueList}" SelectionMode="Single">
                 <ListView.View>
                     <GridView>
-                        <GridViewColumn Header="" Width="28">
-                            <GridViewColumn.CellTemplate>
-                                <DataTemplate>
-                                    <StackPanel Orientation="Horizontal">
-                                        <!--<Image Height="16" Width="16" Source="/ProgramQueuer;component/Resources/play.png" Visibility="{Binding Path=Working, Converter={StaticResource boolToVisible}}" />-->
-                                        <Image Height="16" Width="16" Source="/ProgramQueuer;component/Resources/application.png" Visibility="{Binding Path=Finished, Converter={StaticResource boolInvertedToVisible}}" />
-                                        <Image Height="16" Width="16" Source="/ProgramQueuer;component/Resources/accept.png" Visibility="{Binding Path=Finished, Converter={StaticResource boolToVisible}}" />
-                                    </StackPanel>
-                                </DataTemplate>
-                            </GridViewColumn.CellTemplate>
-                        </GridViewColumn>
                         <GridViewColumn Header="File/Program" Width="{Binding Path=columnWidth1, Source={x:Static properties:Settings.Default}, Mode=TwoWay}">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
@@ -51,75 +43,74 @@
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
-                        <GridViewColumn Header="Options" Width="{Binding Path=columnWidth2, Source={x:Static properties:Settings.Default}, Mode=TwoWay}">
+                        <GridViewColumn Header="Status" Width="{Binding Path=columnWidth3, Source={x:Static properties:Settings.Default}, Mode=TwoWay}">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
                                     <StackPanel Orientation="Horizontal">
-                                        <Button Margin="0 0 6 0" BorderBrush="Transparent" Background="Transparent" Visibility="{Binding Path=Working, Converter={StaticResource boolInvertedToVisible}}" Click="buttonRemove_Click">
-                                            <Image Height="16" Width="16" Source="/ProgramQueuer;component/Resources/remove.png" />
-                                        </Button>
-                                        <Button Margin="0 0 6 0" BorderBrush="Transparent" Background="Transparent" Visibility="{Binding Path=Working, Converter={StaticResource boolToVisible}}" Click="buttonStopCurrent_Click">
-                                            <Image Height="16" Width="16" Source="/ProgramQueuer;component/Resources/stop.png" />
-                                        </Button>
-                                        <Button Margin="0 0 6 0" BorderBrush="Transparent" Background="Transparent" Visibility="{Binding Path=Working, Converter={StaticResource boolInvertedToVisible}}" Click="buttonStartCurrent_Click">
-                                            <Image Height="16" Width="16" Source="/ProgramQueuer;component/Resources/force_run.png" />
-                                        </Button>
-                                        <!--<Button Margin="0 0 6 0"  BorderBrush="Transparent" Background="Transparent">
-                                            <Image Height="16" Width="16" Source="/ProgramQueuer;component/Resources/window.png" />
-                                        </Button>-->
+                                        <TextBlock Margin="0 0 8 0" Visibility="{Binding Path=Finished, Converter={StaticResource boolToVisible}}" FontFamily="{StaticResource FontAwesomeSolid}" Text="&#xf00c;" Foreground="#17aa22" />
+                                        <TextBlock Text="{Binding Status}" />
                                     </StackPanel>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
-                        <GridViewColumn Header="Status" Width="{Binding Path=columnWidth3, Source={x:Static properties:Settings.Default}, Mode=TwoWay}">
+                        <GridViewColumn Header="Actions" Width="{Binding Path=columnWidth2, Source={x:Static properties:Settings.Default}, Mode=TwoWay}">
                             <GridViewColumn.CellTemplate>
                                 <DataTemplate>
-                                    <TextBlock Text="{Binding Status}" />
+                                    <StackPanel Orientation="Horizontal">
+                                        <Button FontFamily="{StaticResource FontAwesomeSolid}" ToolTip="Remove this job" BorderThickness="0" FontSize="16" Padding="8 8" Visibility="{Binding Path=Working, Converter={StaticResource boolInvertedToVisible}}" Click="buttonRemove_Click">&#xf2ed;</Button>
+
+                                        <Border Visibility="{Binding Path=Finished, Converter={StaticResource boolInvertedToVisible}}">
+                                            <Button FontFamily="{StaticResource FontAwesomeSolid}" ToolTip="Start this job immediately" BorderThickness="0" FontSize="16" Padding="8 8" Visibility="{Binding Path=Working, Converter={StaticResource boolInvertedToVisible}}" Click="buttonStartCurrent_Click">&#xf144;</Button></Border>
+
+                                            <Button FontFamily="{StaticResource FontAwesomeSolid}" ToolTip="Stop this job immediately" BorderThickness="0" FontSize="16" Padding="8 8" Visibility="{Binding Path=Working, Converter={StaticResource boolToVisible}}" Click="buttonStopCurrent_Click">&#xf28d;</Button>
+
+                                        <Button FontFamily="{StaticResource FontAwesomeSolid}" ToolTip="Reset status and queue again" BorderThickness="0" FontSize="16" Padding="8 8" Visibility="{Binding Path=Finished, Converter={StaticResource boolToVisible}}" Click="buttonResetCurrent_Click">&#xf01e;</Button>
+
+                                        <Button FontFamily="{StaticResource FontAwesomeSolid}" ToolTip="Mark as finished" BorderThickness="0" FontSize="16" Padding="8 8" Visibility="{Binding Path=Finished, Converter={StaticResource boolInvertedToVisible}}" Click="buttonMarkFinishedCurrent_Click">&#xf14a;</Button>
+                                    </StackPanel>
                                 </DataTemplate>
                             </GridViewColumn.CellTemplate>
                         </GridViewColumn>
                     </GridView>
                 </ListView.View>
             </ListView>
-            <StackPanel Grid.Column="1" Orientation="Vertical">
-                <Button Margin="0 6 6 6" BorderBrush="Transparent" Background="Transparent" Click="buttonAdd_Click" ToolTip="Add a Program to the batch">
-                    <Image Height="16" Width="16" Source="/ProgramQueuer;component/Resources/add.png" />
-                </Button>
-                <Button x:Name="buttonEmpty" Margin="0 6 6 6" BorderBrush="Transparent" Background="Transparent" Click="buttonClear_Click" ToolTip="Clear list">
-                    <Image Height="16" Width="16" Source="/ProgramQueuer;component/Resources/trash-icon.png" />
-                </Button>
-                <Popup HorizontalOffset="-228" VerticalOffset="0" Width="250" Height="Auto" x:Name="popupEmpty" PlacementTarget="{Binding ElementName=buttonEmpty}" StaysOpen="False">
-                    <Border Background="White" BorderBrush="LightGray" BorderThickness="1">
+            <StackPanel Grid.Column="1" Orientation="Vertical" Margin="0 8 8 8">
+                <Button FontFamily="{StaticResource FontAwesomeSolid}" Click="buttonAdd_Click" ToolTip="Add a Program to the batch" BorderThickness="0" FontSize="20" Padding="16">&#xf0fe;</Button>
+                <Button x:Name="buttonEmpty" Click="buttonClear_Click" FontFamily="{StaticResource FontAwesomeSolid}" ToolTip="Clear list" BorderThickness="0" FontSize="20" Padding="16">&#xf2ed;</Button>
+                <Popup HorizontalOffset="-180" VerticalOffset="0" Width="250" Height="Auto" x:Name="popupEmpty" PlacementTarget="{Binding ElementName=buttonEmpty}" StaysOpen="False">
+                    <Border BorderBrush="{DynamicResource LighterBaseBrush}" BorderThickness="1">
                         <StackPanel>
-                            <Button BorderBrush="Transparent" Background="Transparent" Click="buttonClearFinished_Click">Remove Finished Entries</Button>
-                            <Button BorderBrush="Transparent" Background="Transparent" Click="buttonClearAll_Click" IsEnabled="{Binding Path=Working, Converter={StaticResource BooleanInverter}}">Remove All Entries</Button>
+                            <Button Click="buttonClearFinished_Click">Remove Finished Entries</Button>
+                            <Button Click="buttonClearAll_Click" IsEnabled="{Binding Path=Working, Converter={StaticResource BooleanInverter}}">Remove All Entries</Button>
                         </StackPanel>
                     </Border>
                 </Popup>
             </StackPanel>
         </Grid>
-        <GridSplitter ResizeDirection="Rows" Grid.Row="1" BorderThickness="1" Background="Transparent" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" DragCompleted="GridSplitter_DragCompleted" />
-        <GroupBox Grid.Row="2" Margin="6 0 6 6" Padding="0 3 0 0">
-            <GroupBox.Header>
+        <GridSplitter x:Name="gridSplitter" ResizeDirection="Rows" Grid.Row="1" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" DragCompleted="GridSplitter_DragCompleted" />
+        <Expander Margin="8" x:Name="expanderStatus" Grid.Row="2" ExpandDirection="Down" IsExpanded="True" Expanded="expanderStatus_Expanded" Collapsed="expanderStatus_Collapsed" Header="Output">
+            <!--<Expander.Header>
                 <StackPanel Orientation="Horizontal">
                     <TextBlock>Output</TextBlock>
                     <CheckBox x:Name="checkboxOverrideOutput" Margin="6 2 0 0" IsChecked="{Binding Path=RedirectOutput, Mode=TwoWay}" IsEnabled="{Binding Path=Working, Converter={StaticResource BooleanInverter}}" Checked="checkboxOverrideOutput_Checked" Unchecked="checkboxOverrideOutput_Unchecked">Override Console Window</CheckBox>
-                    <Button x:Name="buttonHelp" Margin="6 0 0 0" BorderBrush="Transparent" Background="#01FFFFFF" Cursor="Help" Visibility="{Binding Path=Working, Converter={StaticResource boolInvertedToVisible}}" Click="ButtonHelp_Click">
-                        <Image Height="16" Width="16" Source="/ProgramQueuer;component/Resources/help.png" />
+                    <Button x:Name="buttonHelp" Margin="6 0 0 0" Cursor="Help" Visibility="{Binding Path=Working, Converter={StaticResource boolInvertedToVisible}}" Click="ButtonHelp_Click">
+                        What is this?
                     </Button>
                     <Popup HorizontalOffset="0"  VerticalOffset="0" Width="350" Height="Auto" x:Name="popupHelp" PlacementTarget="{Binding ElementName=buttonHelp}" StaysOpen="False">
-                        <Border BorderBrush="DarkGray" BorderThickness="1" Background="White">
+                        <Border BorderBrush="{DynamicResource LighterBaseBrush}" BorderThickness="1">
                             <TextBlock Margin="6" TextWrapping="Wrap">Controls whether the cmd (command line window) is displayed or not.<LineBreak /><LineBreak />If this is checked, ProgramQueuer will hide the window and transfer all output in the textbox below.<LineBreak /><LineBreak />If this is not checked, the original cmd window is displayed.</TextBlock>
                         </Border>
                     </Popup>
                 </StackPanel>
-            </GroupBox.Header>
-            <TextBox Height="{Binding Path=split_height, Source={x:Static properties:Settings.Default}, Mode=OneWay}" x:Name="textboxStatus" AcceptsReturn="True" IsReadOnly="True" Background="Black" Foreground="White" Text="{Binding Path=SelectedItem.Output, ElementName=listPrograms}" TextChanged="TextBox_TextChanged" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" FontFamily="Fixedsys Excelsior 2.00">
-                
-            </TextBox>
-        </GroupBox>
-        <Button x:Name="buttonExit" Grid.Row="3" HorizontalAlignment="Left" Margin="6 0 6 6" Width="120" Click="ButtonExit_Click">Close</Button>
-        <Button x:Name="buttonStop" Grid.Row="3" HorizontalAlignment="Right" Margin="6 0 6 6" Width="120" Click="ButtonStop_Click" Visibility="{Binding Path=Working, Converter={StaticResource boolToVisible}}">Stop</Button>
-        <Button x:Name="buttonWork" Grid.Row="3" HorizontalAlignment="Right" Margin="6 0 6 6" Width="120" Click="ButtonWork_Click" Visibility="{Binding Path=Working, Converter={StaticResource boolInvertedToVisible}}">Start</Button>
+            </Expander.Header>-->
+            <ScrollViewer Background="Black" >
+                <TextBox x:Name="textboxStatus" BorderThickness="0" AcceptsReturn="True" IsReadOnly="True" Text="{Binding Path=SelectedItem.Output, ElementName=listPrograms}" TextChanged="TextBox_TextChanged" FontFamily="{StaticResource FixedSys}">
+    
+                </TextBox>
+            </ScrollViewer>
+        </Expander>
+        <Button Margin="8 0 8 8" x:Name="buttonExit" Grid.Row="3" HorizontalAlignment="Left" Width="120" Click="ButtonExit_Click">Close</Button>
+        <Button Margin="8 0 8 8" x:Name="buttonStop" Grid.Row="3" HorizontalAlignment="Right" Width="120" Click="ButtonStop_Click" Visibility="{Binding Path=Working, Converter={StaticResource boolToVisible}}">Stop</Button>
+        <Button Margin="8 0 8 8" x:Name="buttonWork" Grid.Row="3" HorizontalAlignment="Right" Width="120" Click="ButtonWork_Click" Visibility="{Binding Path=Working, Converter={StaticResource boolInvertedToVisible}}">Start</Button>
     </Grid>
 </Window>

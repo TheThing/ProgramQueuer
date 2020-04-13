@@ -15,7 +15,7 @@
       <Value Profile="(Default)">300</Value>
     </Setting>
     <Setting Name="columnWidth2" Type="System.Double" Scope="User">
-      <Value Profile="(Default)">75</Value>
+      <Value Profile="(Default)">100</Value>
     </Setting>
     <Setting Name="columnWidth3" Type="System.Double" Scope="User">
       <Value Profile="(Default)">200</Value>
@@ -23,8 +23,14 @@
     <Setting Name="redirectOutput" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">True</Value>
     </Setting>
+    <Setting Name="rememberLast" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
     <Setting Name="lastPath" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="lastjobs" Type="System.String" Scope="User">
+      <Value Profile="(Default)"></Value>
     </Setting>
   </Settings>
 </SettingsFile>

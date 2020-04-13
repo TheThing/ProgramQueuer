@@ -6,20 +6,78 @@ using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
+using System.Management;
 
-namespace ProgramQueuer.Queuer
+namespace ProgramQueuer.Queuer	
 {
 	public class EntryManager : INotifyPropertyChanged
 	{
 		bool _working;
 		bool _redirectOutput;
+		bool _changed;
 		ProgramEntry _currentEntry;
 
 		public EntryManager()
 		{
 			QueueList = new ObservableCollection<ProgramEntry>();
+			_changed = false;
 			_currentEntry = null;
 			_redirectOutput = true;
+		}
+
+		public void Load()
+		{
+			var oldQueue = ProgramQueuer.Properties.Settings.Default.lastjobs;
+			if (oldQueue.Length == 0) return;
+
+			var items = oldQueue.Split(';');
+			for (int i = 0; i < items.Length; i++)
+			{
+				var values = items[i].Split('|');
+				var base64EncodedBytes = System.Convert.FromBase64String(values[2]);
+				var entry = new ProgramEntry {
+				    Name = values[0],
+					Finished = values[1] == "true",
+					Status = values[1] == "true" ? "Finished" : "Queued",
+					Output = System.Text.Encoding.UTF8.GetString(base64EncodedBytes)
+				};
+				entry.Parent = this;
+				this.QueueList.Add(entry);
+			}
+		}
+
+		public void Save()
+		{
+			StringBuilder sb = new StringBuilder("");
+			for (int i = 0; i < this.QueueList.Count; i++)
+			{
+				if (i > 0)
+				{
+					sb.Append(';');
+				}
+				var plainTextBytes = System.Text.Encoding.UTF8.GetBytes(this.QueueList[i].Output != null ? this.QueueList[i].Output : "");
+				sb.Append(String.Format("{0}|{1}|{2}", this.QueueList[i].Name, this.QueueList[i].Finished ? "true" : "false", System.Convert.ToBase64String(plainTextBytes)));
+			}
+			ProgramQueuer.Properties.Settings.Default.lastjobs = sb.ToString();
+			ProgramQueuer.Properties.Settings.Default.Save();
+			_changed = false;
+		}
+
+		public void TriggerSave()
+		{
+			if (_changed) return;
+
+			_changed = true;
+
+			var task = new Task(async () =>
+			{
+				await Task.Delay(60000);
+				if (!_changed == false) return;
+				_changed = false;
+				this.Save();
+			});
+			task.Start();
 		}
 
 		public ObservableCollection<ProgramEntry> QueueList;
@@ -55,14 +113,11 @@ namespace ProgramQueuer.Queuer
 				PropertyChanged(this, new PropertyChangedEventArgs("RedirectOutput"));
 			}
 		}
+
 		public void RunQueuer()
 		{
-			if (QueueList.Count > 0)
-			{
-				Working = true;
-				_currentEntry = QueueList[0];
-				RunProgram(QueueList[0]);
-			}
+			var finished = RunNext();
+			Working = !finished;
 		}
 
 		public void ForceStop()
@@ -70,7 +125,55 @@ namespace ProgramQueuer.Queuer
 			this.Working = false;
 			foreach (var entry in QueueList)
 				if (entry.Working)
-					entry.Process.Kill();
+				{
+					ForceStopEntry(entry);
+				}
+			this.Save();
+		}
+
+		public void ForceStopEntry(ProgramEntry entry)
+		{
+			KillProcessAndChildren(entry.Process.Id);
+			entry.Output += "\n\n[Process was forcefully stopped]";
+			// entry.Process.CloseMainWindow();
+			// entry.Process.Kill();
+		}
+
+		/// <summary>
+		/// Kill a process, and all of its children, grandchildren, etc.
+		/// </summary>
+		/// <param name="pid">Process ID.</param>
+		private static void KillProcessAndChildren(int pid)
+		{
+			// Cannot close 'system idle process'.
+			if (pid == 0)
+			{
+				return;
+			}
+			ManagementObjectSearcher searcher = new ManagementObjectSearcher
+					("Select * From Win32_Process Where ParentProcessID=" + pid);
+			ManagementObjectCollection moc = searcher.Get();
+			foreach (ManagementObject mo in moc)
+			{
+				KillProcessAndChildren(Convert.ToInt32(mo["ProcessID"]));
+			}
+			try
+			{
+				Process proc = Process.GetProcessById(pid);
+				proc.Kill();
+			}
+			catch (ArgumentException)
+			{
+				// Process already exited.
+			}
+		}
+
+		public ProgramEntry AddToQueue(ProgramEntry entry)
+		{
+			entry.Parent = this;
+			this.QueueList.Add(entry);
+			this.Save();
+			return entry;
 		}
 
 		public void RunProgram(ProgramEntry entry)
@@ -94,6 +197,7 @@ namespace ProgramQueuer.Queuer
 					_currentEntry = null;
 					this.Working = false;
 				}
+				this.Save();
 			}
 		}
 
@@ -123,11 +227,13 @@ namespace ProgramQueuer.Queuer
 					break;
 				}
 			}
-			if (_redirectOutput)
+			if (curr.Redirected)
 				curr.ProcessManager.StopMonitoringProcessOutput();
 			curr.Working = false;
 			curr.Finished = true;
 			curr.Status = "Finished";
+
+			this.Save();
 
 			OnEntryFinish(curr, new EventArgs());
 			

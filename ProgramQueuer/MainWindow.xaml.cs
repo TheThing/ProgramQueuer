@@ -18,7 +18,6 @@ using System.Windows.Threading;
 using ProgramQueuer.Queuer;
 using WPF.JoshSmith.ServiceProviders.UI;
 using Microsoft.Win32;
-
 using NotifyIcon = System.Windows.Forms.NotifyIcon;
 
 namespace ProgramQueuer
@@ -45,6 +44,7 @@ namespace ProgramQueuer
 			this._icon.MouseClick += new System.Windows.Forms.MouseEventHandler(_icon_MouseClick);
 			this.DataContext = _manager;
 			this.listPrograms.ItemsSource = _manager.QueueList;
+			mainGrid.RowDefinitions[2].Height = new GridLength(ProgramQueuer.Properties.Settings.Default.split_height);
 		}
 
 		void _icon_MouseClick(object sender, System.Windows.Forms.MouseEventArgs e)
@@ -62,17 +62,27 @@ namespace ProgramQueuer
 		private void Window_Loaded(object sender, RoutedEventArgs e)
 		{
 			_manager.RedirectOutput = ProgramQueuer.Properties.Settings.Default.redirectOutput;
+			_manager.Load();
 			new ListViewDragDropManager<ProgramEntry>(this.listPrograms);
 		}
 
 		private void GridSplitter_DragCompleted(object sender, System.Windows.Controls.Primitives.DragCompletedEventArgs e)
 		{
-			ProgramQueuer.Properties.Settings.Default.split_height = textboxStatus.Height;
+			ProgramQueuer.Properties.Settings.Default.split_height = mainGrid.RowDefinitions[2].ActualHeight;
 		}
 
 		private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
 		{
-			if (_manager.Working)
+			bool working = false;
+			for (int i = 0; i < _manager.QueueList.Count; i++)
+			{
+				if (_manager.QueueList[i].Working)
+				{
+					working = true;
+					break;
+				}
+			}
+			if (working)
 				if (MessageBox.Show("Are you sure you want to stop current worker and batch and exit application?", "You sure you want to exit?", MessageBoxButton.YesNo) == MessageBoxResult.No)
 				{
 					e.Cancel = true;
@@ -83,7 +93,8 @@ namespace ProgramQueuer
 			this._icon.Visible = false;
 			ProgramQueuer.Properties.Settings.Default.redirectOutput = _manager.RedirectOutput;
 			ProgramQueuer.Properties.Settings.Default.lastPath = _openFile.InitialDirectory;
-			ProgramQueuer.Properties.Settings.Default.Save();
+			_manager.Save();
+			// ProgramQueuer.Properties.Settings.Default.Save();
 		}
 
 		private void ButtonExit_Click(object sender, RoutedEventArgs e)
@@ -119,8 +130,9 @@ namespace ProgramQueuer
 				string[] files = (string[])e.Data.GetData(DataFormats.FileDrop, false);
 				foreach (string file in files)
 				{
-					_manager.QueueList.Add(new ProgramEntry { Name = file , Status = "Queued"});
+					_manager.AddToQueue(new ProgramEntry { Name = file , Status = "Queued"});
 					_openFile.InitialDirectory = new FileInfo(file).DirectoryName;
+					_manager.Save();
 				}
 			}
 		}
@@ -136,14 +148,14 @@ namespace ProgramQueuer
 			{
 				if (MessageBox.Show("Are you sure you want to kill this process and continue with the next one available?", "Stop current process?", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
 				{
-					((sender as Control).DataContext as ProgramEntry).Process.Kill();
+					_manager.ForceStopEntry((sender as Control).DataContext as ProgramEntry);
 				}
 			}
 			else
 			{
 				if (MessageBox.Show("Are you sure you want to kill this process?", "Stop selected process?", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
 				{
-					((sender as Control).DataContext as ProgramEntry).Process.Kill();
+					_manager.ForceStopEntry((sender as Control).DataContext as ProgramEntry);
 				}
 			}
 		}
@@ -160,7 +172,7 @@ namespace ProgramQueuer
 			{
 				foreach (string file in _openFile.FileNames)
 				{
-					_manager.QueueList.Add(new ProgramEntry { Name = file, Status = "Queued" });
+					_manager.AddToQueue(new ProgramEntry { Name = file, Status = "Queued" });
 					_openFile.InitialDirectory = new FileInfo(file).DirectoryName;
 				}
 			}
@@ -180,7 +192,7 @@ namespace ProgramQueuer
 
 		private void ButtonHelp_Click(object sender, RoutedEventArgs e)
 		{
-			popupHelp.IsOpen = true;
+			// popupHelp.IsOpen = true;
 		}
 
 		private void buttonStartCurrent_Click(object sender, RoutedEventArgs e)
@@ -204,13 +216,19 @@ namespace ProgramQueuer
 
 		private void buttonClearFinished_Click(object sender, RoutedEventArgs e)
 		{
+			bool changed = false;
 			for (int i = 0; i < _manager.QueueList.Count; i++)
 			{
 				if (_manager.QueueList[i].Finished == true)
 				{
+					changed = true;
 					_manager.QueueList.Remove(_manager.QueueList[i]);
 					i--;
 				}
+			}
+			if (changed)
+			{
+				_manager.Save();
 			}
 			popupEmpty.IsOpen = false;
 		}
@@ -228,8 +246,37 @@ namespace ProgramQueuer
 			if (MessageBox.Show("Are you sure you want to clear list?", "Clear list?", MessageBoxButton.YesNo) == MessageBoxResult.Yes)
 			{
 				_manager.QueueList.Clear();
+				_manager.Save();
 			}
 			popupEmpty.IsOpen = false;
+		}
+
+		private void expanderStatus_Expanded(object sender, RoutedEventArgs e)
+		{
+			mainGrid.RowDefinitions[2].Height = new GridLength(ProgramQueuer.Properties.Settings.Default.split_height);
+			gridSplitter.Visibility = Visibility.Visible;
+		}
+
+		private void expanderStatus_Collapsed(object sender, RoutedEventArgs e)
+		{
+			mainGrid.RowDefinitions[2].Height = new GridLength(0, GridUnitType.Auto);
+			gridSplitter.Visibility = Visibility.Collapsed;
+		}
+
+		private void buttonResetCurrent_Click(object sender, RoutedEventArgs e)
+		{
+			var entry = (sender as Control).DataContext as ProgramEntry;
+			entry.Finished = false;
+			entry.Status = "Queued";
+			_manager.Save();
+		}
+
+		private void buttonMarkFinishedCurrent_Click(object sender, RoutedEventArgs e)
+		{
+			var entry = (sender as Control).DataContext as ProgramEntry;
+			entry.Finished = true;
+			entry.Status = "Marked finished";
+			_manager.Save();
 		}
 	}
 }
